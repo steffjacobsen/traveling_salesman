@@ -1,0 +1,8 @@
+<launch>
+    <node name='route_generator' type='route_generator_node' pkg='traveling_salesman' output="screen"/>
+    <node name='route_planner' type='route_planner_node' pkg='traveling_salesman' output="screen">
+        <remap from="route_planner/points" to="route_generator/points"/>
+    </node>
+    <node name='rviz' pkg='rviz' type='rviz' args='-d $(find traveling_salesman)/rviz/traveling_salesman.rviz' output="screen"/>
+    <node pkg="tf" type="static_transform_publisher" name="world_link" args="0 0 0 0 0 1 map world 1" />
+</launch>

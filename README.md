@@ -1,0 +1,3 @@
+## A simulation of the traveling salesman problem
+
+The package contains two nodes: one for generating random points in a square region [-1, 1] and another for generating the shortest route when traveling to all of the points exactly once. The node responsible for planning the route can use one of three algorithms to calculate the optimal route: a brute force algorithm which explores all solution, the 2 opt search algorithm and the nearest neigbor algorithm. The brute force algorithm is slow but will always find the optimal solution.  
