@@ -1,6 +1,7 @@
 #include"traveling_salesman/route_generator.h"
 
 RouteGenerator::RouteGenerator(ros::NodeHandle *nh){
+    range = fabs(nh->param("range", 1.0));
     generate_points_srv = nh->advertiseService("generate_points", &RouteGenerator::generate_pts_callback, this);
     points_pub = nh->advertise<visualization_msgs::MarkerArray>("points", 10);
     ids_pub = nh->advertise<visualization_msgs::MarkerArray>("points_ids", 10);
@@ -14,7 +15,7 @@ bool RouteGenerator::generate_pts_callback(traveling_salesman::GeneratePoints::R
   }
   res.success = true;
   res.message = "Points generated";
-  vector<Point> points = generate_random_points(-1, 1, -1, 1, req.number_of_points);
+  vector<Point> points = generate_random_points(-range, range, -range, range, req.number_of_points);
   publish_points(points);
   publish_ids(points);
   return true;

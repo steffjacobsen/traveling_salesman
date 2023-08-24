@@ -1,5 +1,7 @@
 <launch>
-    <node name='route_generator' type='route_generator_node' pkg='traveling_salesman' output="screen"/>
+    <node name='route_generator' type='route_generator_node' pkg='traveling_salesman' output="screen">
+        <param name="range" value="5."/>
+    </node>
     <node name='route_planner' type='route_planner_node' pkg='traveling_salesman' output="screen">
         <remap from="route_planner/points" to="route_generator/points"/>
     </node>

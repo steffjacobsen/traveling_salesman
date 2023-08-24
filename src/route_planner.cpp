@@ -22,13 +22,25 @@ bool RoutePlanner::plan_callback(traveling_salesman::PlanRoute::Request& req, tr
     vector<Point> route;
     route.reserve(loaded_points.size());
     ros::Time begin = ros::Time::now();
+    string method = "";
     if (algorithm == traveling_salesman::PlanRoute::Request::BRUTEFORCE) {
         ROS_INFO("Using brute force algorithm");
         route = bruteforce(loaded_points);
+        method = "brute force";
     } else if (algorithm == traveling_salesman::PlanRoute::Request::TWOOPTSEARCH) {
         ROS_INFO("Using 2-opt algorithm");
         route = twooptsearch(loaded_points);
-    } else {
+        method = "2-opt";
+    } else if (algorithm == traveling_salesman::PlanRoute::Request::THREEOPTSEARCH) {
+        ROS_INFO("Using 3-opt algorithm");
+        route = threeoptsearch(loaded_points);
+        method = "3-opt";
+    } else if (algorithm == traveling_salesman::PlanRoute::Request::NEARESTNEIGHBOR){
+        ROS_INFO("Using nearest neighbor algorithm");
+        route = nearestneighbor(loaded_points);
+        method = "nearest neighbor";
+    }
+    else {
         ROS_ERROR("Unknown algorithm");
         res.success = false;
         res.message = "Unknown algorithm";
@@ -42,7 +54,7 @@ bool RoutePlanner::plan_callback(traveling_salesman::PlanRoute::Request& req, tr
 
     // Publish statistics:
     double min_cost = routecost(route);
-    publish_overlay("The min cost is " + to_string(min_cost) + "\nThe time cost is " + to_string(duration.toSec()) + " s");
+    publish_overlay("Method: " + method + "\nThe min cost is " + to_string(min_cost) + "\nThe time cost is " + to_string(duration.toSec()) + " s");
 
     res.success = true;
     res.message = "Route planned";
@@ -104,6 +116,7 @@ double RoutePlanner::routecost(const vector<Point>& points){
 }
 
 vector<Point> RoutePlanner::twooptswap(const vector<Point>& points, int v1, int v2){
+    assert(v1 < v2 && v2 < points.size());
     vector<Point> route;
     route.reserve(points.size());
     for (int i = 0; i < v1; ++i) {
@@ -113,6 +126,25 @@ vector<Point> RoutePlanner::twooptswap(const vector<Point>& points, int v1, int 
         route.push_back(points[i]);
     }
     for (int i = v2 + 1; i < points.size(); ++i) {
+        route.push_back(points[i]);
+    }
+    return route;
+}
+
+vector<Point> RoutePlanner::threeoptswap(const vector<Point>& points, int v1, int v2, int v3){
+    assert(v1 < v2 && v2 < v3 && v3 < points.size());
+    vector<Point> route;
+    route.reserve(points.size());
+    for (int i = 0; i < v1; ++i) {
+        route.push_back(points[i]);
+    }
+    for (int i = v2; i >= v1; --i) {
+        route.push_back(points[i]);
+    }
+    for (int i = v3; i >= v2 + 1; --i) {
+        route.push_back(points[i]);
+    }
+    for (int i = v3 + 1; i < points.size(); ++i) {
         route.push_back(points[i]);
     }
     return route;
@@ -154,7 +186,7 @@ vector<Point> RoutePlanner::bruteforce(const vector<Point>& points){
     route.reserve(points.size());
     vector<int> vertex;
     for (int i = 0; i < points.size(); i++)
-        if (i != 0) vertex.push_back(i);
+        vertex.push_back(i);
     double min_cost = numeric_limits<double>::max();
     do {
         double cost = 0;
@@ -180,11 +212,32 @@ vector<Point> RoutePlanner::bruteforce(const vector<Point>& points){
 }
 
 vector<Point> RoutePlanner::threeoptsearch(const vector<Point>& points){
-
-}
-
-vector<Point> RoutePlanner::branchandbound(const vector<Point>& points){
-
+    // The 3-opt algorithm is a local search algorithm that tries to improve
+    // an existing route by swapping three edges. It is an improvement over
+    // the 2-opt algorithm. The algorithm can be computationally expensive compared
+    // the 2-opt algorithm, but it is still much faster than the brute force and 
+    // can give better solutions than the 2-opt algorithm. It will not always find
+    // the optimal solution.
+    bool improved = true;
+    vector<Point> route = points;
+    double best_cost = routecost(route);
+    while (improved) {
+        improved = false;
+        for (int i = 1; i < route.size() - 2; ++i) {
+            for (int k = i + 1; k < route.size() - 1; ++k) {
+                for (int m = k + 1; m < route.size(); ++m) {
+                    vector<Point> new_route = threeoptswap(route, i, k, m);
+                    double new_cost = routecost(new_route);
+                    if (new_cost < best_cost) {
+                        best_cost = new_cost;
+                        route = new_route;
+                        improved = true;
+                    }
+                }
+            }
+        }
+    }
+    return route;
 }
 
 vector<Point> RoutePlanner::nearestneighbor(const vector<Point>& points){

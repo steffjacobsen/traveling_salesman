@@ -2,8 +2,7 @@ uint8 algorithm
 uint8 BRUTEFORCE=0
 uint8 TWOOPTSEARCH=1
 uint8 THREEOPTSEARCH=2
-uint8 BRANCHANDBOUND=3
-uint8 NEARESTNEIGHBOR=4
+uint8 NEARESTNEIGHBOR=3
 ---
 bool success
 string message

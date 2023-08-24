@@ -16,6 +16,7 @@ struct Point{
 
 class RouteGenerator{
 private:
+    double range;
     std::string topic;
     ros::ServiceServer generate_points_srv;
     ros::Publisher points_pub;
